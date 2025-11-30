@@ -9,6 +9,8 @@ SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 PHONE_NUMBER = os.getenv("PHONE_NUMBER")
 TAILSCALE_IP = os.getenv("TAILSCALE_IP")
+PUSHOVER_USER_KEY = os.getenv("PUSHOVER_USER_KEY")
+PUSHOVER_API_TOKEN = os.getenv("PUSHOVER_API_TOKEN")
 
 # Database
 DB_NAME = "news.db"
