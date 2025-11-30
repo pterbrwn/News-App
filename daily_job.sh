@@ -9,4 +9,4 @@ source venv/bin/activate
 python3 ingest.py
 
 # Send notification
-python3 notify.pyy
+python3 notify.py
