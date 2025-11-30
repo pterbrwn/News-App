@@ -17,9 +17,14 @@ def get_ip():
     return IP
 
 def send_alert():
-    ip = get_ip()
+    # Prefer the Tailscale IP if set, otherwise fall back to auto-detect
+    if config.TAILSCALE_IP:
+        ip = config.TAILSCALE_IP
+    else:
+        ip = get_ip()
+
     url = f"http://{ip}:8501"
-    
+
     msg_body = f"Morning Briefing Ready.\n\nImpact Report: {url}"
     msg = MIMEText(msg_body)
     msg['Subject'] = "Jetson Intel"

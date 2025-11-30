@@ -8,6 +8,7 @@ load_dotenv()
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 PHONE_NUMBER = os.getenv("PHONE_NUMBER")
+TAILSCALE_IP = os.getenv("TAILSCALE_IP")
 
 # Database
 DB_NAME = "news.db"
