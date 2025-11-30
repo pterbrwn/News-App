@@ -25,12 +25,13 @@ def analyze_with_ollama(text):
     1. Summarize the text below in 3 concise bullet points.
     2. Rate the impact of this news on this specific persona: "{config.USER_PERSONA}" (Scale 0-10).
     3. Explain the relevance to the persona in one sentence.
+    4. Explicitly analyze the "Cause and Effect" of this news on the persona's goals (Retirement, Career, Local Property).
 
     Return JSON ONLY:
     {{
         "summary": "- Point 1\n- Point 2",
         "impact_score": 5,
-        "impact_reason": "Reason..."
+        "impact_reason": "Relevance: [One Sentence]. Cause & Effect: [Analysis]"
     }}
 
     News Text:

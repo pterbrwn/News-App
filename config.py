@@ -19,10 +19,11 @@ OLLAMA_MODEL = "llama3"
 
 # Feeds (Add your favorites)
 RSS_FEEDS = [
-    "http://feeds.bbci.co.uk/news/rss.xml",
-    "https://techcrunch.com/feed/",
-    "https://news.ycombinator.com/rss",
-    "https://www.theverge.com/rss/index.xml"
+    "http://feeds.bbci.co.uk/news/rss.xml", # Global News
+    "https://thehill.com/feed/", # US Politics (Fact-based/Moderate)
+    "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", # Finance & Markets
+    "https://techcrunch.com/feed/", # Tech Industry
+    "https://news.google.com/rss/search?q=Grand+Rapids+MI&hl=en-US&gl=US&ceid=US:en" # Local Grand Rapids News
 ]
 
 # Your Persona (Tweak this to change how the AI rates news)
@@ -32,6 +33,9 @@ I am a white male.
 I am 28 years old. 
 I am interested in the stock market for my retirement funds. 
 I am interested in the stock market for future investment opportunities. 
+I am interested in United States politics as it affects my career and investments.
+I am interested in Global politics as it affects my career and investments. 
+I am interested in the technology industry as it affects my career and investments.
 I own a rental property on the Northwest side of Grand Rapids, MI. 
 I live in Grand Rapids, MI. 
 I vote republican, however, I consider myself moderate. 
