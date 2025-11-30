@@ -8,23 +8,24 @@ It highlights the architecture, privacy (local AI), and the automation steps we 
 
 **A private, self-hosted AI news analyst running on the NVIDIA Jetson Orin Nano.**
 
-This application autonomously scrapes RSS feeds, uses a local Large Language Model (Llama 3 via Ollama) to analyze articles against a specific user persona, and delivers a prioritized daily briefing via SMS and a mobile-responsive web dashboard.
+This application autonomously scrapes RSS feeds, uses a local Large Language Model (Llama 3 via Ollama) to analyze articles against a specific user persona, and delivers a prioritized daily briefing via **Pushover** notifications and a mobile-responsive web dashboard.
 
 ---
 
 ## 🚀 Key Features
 
 *   **100% Private & Local:** All AI inference runs on-device using the Jetson's GPU. No data is sent to OpenAI or third-party APIs.
-*   **Persona-Driven Analysis:** The AI doesn't just summarize; it rates news on a 0-10 scale based on *your* specific interests (defined in a config file) and explains *why* it matters to you.
-*   **Automated Workflow:** Runs automatically every morning via Cron.
-*   **SMS Notification:** Sends a text message with a link to the dashboard when the briefing is ready.
-*   **Zero-Cost:** Uses free RSS feeds, local compute, and standard email-to-SMS gateways.
+*   **Persona-Driven Analysis:** The AI rates news on a 0-10 scale based on *your* specific interests (defined in a config file) and explains *why* it matters to you.
+*   **Deep Intelligence:** Generates "Key Intelligence" summaries (4-6 detailed bullet points) and identifies "Cause & Effect" impacts on your career and investments.
+*   **Expert UI:** A sleek, dark-mode dashboard with card-based layouts, topic tagging, and critical alert badges.
+*   **Reliable Notifications:** Uses **Pushover** for instant, unblockable push notifications to your phone.
+*   **Self-Healing:** Automated watchdog ensures the dashboard is always running and accessible.
 
 ## 🏗️ Architecture
 
 1.  **Ingestion:** Python (`feedparser`, `newspaper3k`) fetches articles from configured RSS feeds.
 2.  **The Brain:** Articles are sent to **Ollama (Llama 3)** running in a Docker container for analysis.
-3.  **Storage:** Processed insights are stored in a local SQLite database (`news.db`).
+3.  **Storage:** Processed insights are stored in a local SQLite database (`news.db`) with auto-cleanup of old data.
 4.  **Frontend:** A **Streamlit** web application serves a scrollable, prioritized dashboard.
 5.  **Access:** Accessible remotely via **Tailscale** VPN.
 
@@ -37,6 +38,7 @@ This application autonomously scrapes RSS feeds, uses a local Large Language Mod
     *   Python 3.10+
     *   [Ollama](https://ollama.com) (Running via Docker with GPU access)
     *   [Tailscale](https://tailscale.com) (For secure remote access)
+    *   [Pushover Account](https://pushover.net) (For notifications)
 
 ---
 
@@ -58,12 +60,9 @@ This application autonomously scrapes RSS feeds, uses a local Large Language Mod
 3.  **Configure Secrets (.env)**
     Create a `.env` file in the root directory:
     ```ini
-    # Google App Password (requires 2FA enabled on Google Account)
-    SMTP_EMAIL=your_email@gmail.com
-    SMTP_PASSWORD=your_16_char_app_password
-    
-    # Carrier Gateway (e.g., number@vtext.com for Verizon)
-    PHONE_NUMBER=5551234567@vtext.com
+    # Pushover Credentials (https://pushover.net)
+    PUSHOVER_USER_KEY=your_user_key
+    PUSHOVER_API_TOKEN=your_api_token
     
     # Your Jetson's Tailscale IP
     TAILSCALE_IP=100.x.x.x
@@ -99,15 +98,12 @@ nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &
 
 ## 🤖 Automation (Cron)
 
-The application is designed to run on a schedule. The repository includes a `daily_job.sh` wrapper.
+The application is designed to run on a schedule. The repository includes a `daily_job.sh` wrapper which handles ingestion, notifications, and ensures the dashboard is running.
 
 **Recommended Crontab Configuration:**
 ```bash
 # Run the briefing every morning at 7:00 AM
 0 7 * * * /bin/bash /path/to/News-App/daily_job.sh >> /path/to/News-App/cron.log 2>&1
-
-# Ensure the UI restarts on reboot
-@reboot /bin/bash -c 'cd /path/to/News-App && source venv/bin/activate && nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &'
 ```
 
 ---
