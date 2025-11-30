@@ -1,2 +1,131 @@
-# News-App
-this is an application that summarizes news
+Here is a professional, "Expert Level" `README.md` for your project. You can copy-paste this directly into your repository.
+
+It highlights the architecture, privacy (local AI), and the automation steps we built.
+
+***
+
+# ☕ Jetson Morning Briefing Agent
+
+**A private, self-hosted AI news analyst running on the NVIDIA Jetson Orin Nano.**
+
+This application autonomously scrapes RSS feeds, uses a local Large Language Model (Llama 3 via Ollama) to analyze articles against a specific user persona, and delivers a prioritized daily briefing via SMS and a mobile-responsive web dashboard.
+
+---
+
+## 🚀 Key Features
+
+*   **100% Private & Local:** All AI inference runs on-device using the Jetson's GPU. No data is sent to OpenAI or third-party APIs.
+*   **Persona-Driven Analysis:** The AI doesn't just summarize; it rates news on a 0-10 scale based on *your* specific interests (defined in a config file) and explains *why* it matters to you.
+*   **Automated Workflow:** Runs automatically every morning via Cron.
+*   **SMS Notification:** Sends a text message with a link to the dashboard when the briefing is ready.
+*   **Zero-Cost:** Uses free RSS feeds, local compute, and standard email-to-SMS gateways.
+
+## 🏗️ Architecture
+
+1.  **Ingestion:** Python (`feedparser`, `newspaper3k`) fetches articles from configured RSS feeds.
+2.  **The Brain:** Articles are sent to **Ollama (Llama 3)** running in a Docker container for analysis.
+3.  **Storage:** Processed insights are stored in a local SQLite database (`news.db`).
+4.  **Frontend:** A **Streamlit** web application serves a scrollable, prioritized dashboard.
+5.  **Access:** Accessible remotely via **Tailscale** VPN.
+
+---
+
+## 🛠️ Prerequisites
+
+*   **Hardware:** NVIDIA Jetson Orin Nano (8GB recommended) or any Linux machine with an NVIDIA GPU.
+*   **Software:**
+    *   Python 3.10+
+    *   [Ollama](https://ollama.com) (Running via Docker with GPU access)
+    *   [Tailscale](https://tailscale.com) (For secure remote access)
+
+---
+
+## ⚙️ Installation
+
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/pterbrwn/News-App.git
+    cd News-App
+    ```
+
+2.  **Set up Virtual Environment**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+3.  **Configure Secrets (.env)**
+    Create a `.env` file in the root directory:
+    ```ini
+    # Google App Password (requires 2FA enabled on Google Account)
+    SMTP_EMAIL=your_email@gmail.com
+    SMTP_PASSWORD=your_16_char_app_password
+    
+    # Carrier Gateway (e.g., number@vtext.com for Verizon)
+    PHONE_NUMBER=5551234567@vtext.com
+    
+    # Your Jetson's Tailscale IP
+    TAILSCALE_IP=100.x.x.x
+    ```
+
+4.  **Configure Persona (config.py)**
+    Edit `config.py` to define who you are. The AI uses this to score relevance.
+    ```python
+    USER_PERSONA = """
+    I am a software engineer interested in AI, edge computing, and geopolitical events.
+    I do NOT care about sports or celebrity gossip.
+    """
+    ```
+
+---
+
+## 🏃 Usage
+
+### Manual Run (Testing)
+To trigger the ingestion and notification manually:
+```bash
+./daily_job.sh
+```
+
+### Starting the Dashboard
+To keep the UI running in the background:
+```bash
+nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &
+```
+*Access via:* `http://<TAILSCALE_IP>:8501`
+
+---
+
+## 🤖 Automation (Cron)
+
+The application is designed to run on a schedule. The repository includes a `daily_job.sh` wrapper.
+
+**Recommended Crontab Configuration:**
+```bash
+# Run the briefing every morning at 7:00 AM
+0 7 * * * /bin/bash /path/to/News-App/daily_job.sh >> /path/to/News-App/cron.log 2>&1
+
+# Ensure the UI restarts on reboot
+@reboot /bin/bash -c 'cd /path/to/News-App && source venv/bin/activate && nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &'
+```
+
+---
+
+## 🧠 AI Model Setup (Ollama)
+
+Ensure your Docker container has the model pulled:
+
+```bash
+# Check if container is running
+docker ps
+
+# Pull the model inside the container
+docker exec -it ollama ollama pull llama3
+```
+
+---
+
+## 📄 License
+
+This project is open-source. Feel free to fork and modify for your own daily intelligence needs.
