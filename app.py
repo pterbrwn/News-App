@@ -184,10 +184,6 @@ def render_content_html(row):
         badge_html = f'<span class="badge badge-high">Important • {score}/10</span>'
     else:
         badge_html = f'<span class="badge badge-low">Noise • {score}/10</span>'
-    
-    # Date Logic
-    date_str = row.get('date', 'Unknown Date')
-    date_html = f'<span style="color: #666; font-size: 0.75rem; white-space: nowrap;">📅 {date_str}</span>'
 
     # Topics Logic (Handle missing column or JSON errors)
     topics_html = ""
@@ -224,14 +220,14 @@ def render_content_html(row):
     
     # Escape the impact reason
     impact_reason_escaped = html.escape(str(row['impact_reason']))
+    
+    # Date (simple text, no HTML needed)
+    date_str = row.get('date', 'Unknown')
 
     return f"""<div class="news-card-content">
-<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-        {badge_html}
-        {topics_html}
-    </div>
-    {date_html}
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px;">
+    {badge_html}
+    {topics_html}
 </div>
 <div class="card-summary">{summary_html}</div>
 <div class="analysis-box">
@@ -242,7 +238,10 @@ def render_content_html(row):
 {impact_reason_escaped}
 </div>
 </div>
-<a href="{row['link']}" target="_blank" class="source-link">🔗 Read Original Source</a>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+    <a href="{row['link']}" target="_blank" class="source-link">🔗 Read Original Source</a>
+    <span style="color: #666; font-size: 0.7rem;">📅 {date_str}</span>
+</div>
 </div>"""
 
 # -----------------------------------------------------------------------------
