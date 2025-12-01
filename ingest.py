@@ -53,23 +53,27 @@ def analyze_summary(text):
     """
     return call_ollama(prompt)
 
-def analyze_impact(text, persona_name, persona_desc):
-    """Step 2: Rate impact for a specific persona."""
+def analyze_impacts_bulk(text, personas_dict):
+    """Step 2: Rate impact for MULTIPLE personas in one pass."""
+    
+    personas_text = ""
+    for name, profile in personas_dict.items():
+        personas_text += f"--- PERSONA: {name} ---\n{profile}\n\n"
+
     prompt = f"""
     You are a personal intelligence officer.
-    Rate the impact of this news on this specific persona:
+    Analyze the impact of this news on the following personas.
     
-    NAME: {persona_name}
-    PROFILE: "{persona_desc}"
+    {personas_text}
+    
+    For EACH persona, provide:
+    1. Impact Score (0-10)
+    2. Impact Reason (Relevance + Cause & Effect)
 
-    1. Rate the impact (Scale 0-10).
-    2. Explain the relevance in one sentence.
-    3. Analyze the "Cause and Effect" on the persona's specific goals.
-
-    Return JSON ONLY:
+    Return JSON ONLY in this format:
     {{
-        "impact_score": 5,
-        "impact_reason": "Relevance: [One Sentence]. Cause & Effect: [Analysis]"
+        "PersonaName1": {{ "impact_score": 5, "impact_reason": "..." }},
+        "PersonaName2": {{ "impact_score": 8, "impact_reason": "..." }}
     }}
 
     News Text:
@@ -155,37 +159,47 @@ def run_ingestion():
                 # Or better: skip re-scraping if we already have all personas.
                 pass
 
-            # 2. Check Personas
+            # 2. Check Personas (Bulk Processing)
+            missing_personas = {}
             for name, profile in config.PERSONAS.items():
-                # Check if we already have a rating for this persona
                 c.execute("SELECT id FROM article_impacts WHERE article_link = ? AND persona = ?", (entry.link, name))
-                if c.fetchone():
-                    continue # Already rated
-                
-                print(f"    > Rating for {name}...")
-                
-                # We need text. If we didn't scrape it yet (existing article), scrape now.
-                if not article_text:
-                    try:
-                        article = Article(entry.link)
-                        article.download()
-                        article.parse()
-                        article_text = article.text
-                    except:
-                        article_text = ""
-                    
-                    if not article_text or len(article_text) < 50:
-                        article_text = entry.get('description', entry.get('summary', ''))
-                
-                if len(article_text) < 50: continue
+                if not c.fetchone():
+                    missing_personas[name] = profile
+            
+            if not missing_personas:
+                continue
 
-                # Step 2: Impact Analysis
-                impact_data = analyze_impact(article_text, name, profile)
-                if impact_data:
-                    c.execute("INSERT INTO article_impacts (article_link, persona, impact_score, impact_reason) VALUES (?,?,?,?)",
-                              (entry.link, name, impact_data.get('impact_score', 0), impact_data.get('impact_reason', 'N/A')))
-                    conn.commit()
-                    print(f"      ✅ Score: {impact_data.get('impact_score')}")
+            print(f"    > Rating for {list(missing_personas.keys())}...")
+            
+            # We need text. If we didn't scrape it yet (existing article), scrape now.
+            if not article_text:
+                try:
+                    article = Article(entry.link)
+                    article.download()
+                    article.parse()
+                    article_text = article.text
+                except:
+                    article_text = ""
+                
+                if not article_text or len(article_text) < 50:
+                    article_text = entry.get('description', entry.get('summary', ''))
+            
+            if len(article_text) < 50: continue
+
+            # Step 2: Bulk Impact Analysis
+            impacts_map = analyze_impacts_bulk(article_text, missing_personas)
+            
+            if impacts_map:
+                for name, data in impacts_map.items():
+                    # Validate response matches requested personas
+                    if name in missing_personas and isinstance(data, dict):
+                        score = data.get('impact_score', 0)
+                        reason = data.get('impact_reason', 'N/A')
+                        
+                        c.execute("INSERT INTO article_impacts (article_link, persona, impact_score, impact_reason) VALUES (?,?,?,?)",
+                                  (entry.link, name, score, reason))
+                        print(f"      ✅ {name}: {score}")
+                conn.commit()
 
     conn.close()
     print("💤 Ingestion Complete.")
