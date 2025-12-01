@@ -28,20 +28,40 @@ RSS_FEEDS = [
     "https://news.google.com/rss/search?q=Grand+Rapids+MI&hl=en-US&gl=US&ceid=US:en" # Local Grand Rapids News
 ]
 
-# Your Persona (Tweak this to change how the AI rates news)
-USER_PERSONA = """
-I am a Sr. Technical Product Owner at Meijer, a Midwest retailer. I work in the Digital IT organization under Scott Pallas. 
-I am a white male. 
-I am 28 years old. 
-I am interested in the stock market for my retirement funds. 
-I am interested in the stock market for future investment opportunities. 
-I am interested in United States politics as it affects my career and investments.
-I am interested in Global politics as it affects my career and investments. 
-I am interested in the technology industry as it affects my career and investments.
-I own a rental property on the Northwest side of Grand Rapids, MI. 
-I live in Grand Rapids, MI. 
-I vote republican, however, I consider myself moderate. 
-I do not want opinionated news. 
-I do want fact-based news. 
-I want to know cause and effect of the news. 
-"""
+# Personas
+PERSONAS = {
+    "Peter": """
+    I am a Sr. Technical Product Owner at Meijer, a Midwest retailer. I work in the Digital IT organization under Scott Pallas. 
+    I am a white male. 
+    I am 28 years old. 
+    I am interested in the stock market for my retirement funds. 
+    I am interested in the stock market for future investment opportunities. 
+    I am interested in United States politics as it affects my career and investments.
+    I am interested in Global politics as it affects my career and investments. 
+    I am interested in the technology industry as it affects my career and investments.
+    I own a rental property on the Northwest side of Grand Rapids, MI. 
+    I live in Grand Rapids, MI. 
+    I vote republican, however, I consider myself moderate. 
+    I do not want opinionated news. 
+    I do want fact-based news. 
+    I want to know cause and effect of the news. 
+    """,
+    
+    "Maddie": """
+    I am an Education Professional teaching at Northview High School in Grand Rapids, MI. as a spanish teacher.
+    I am interested in local news and major global headlines.
+    I am interested in how United States politics affects education and community well-being.
+    I am interested in how United States politics affect financial markets.
+    I am a white female. 
+    I am 28 years old. 
+    I vote democrat, however, I consider myself moderate. 
+    I do not want opinionated news. 
+    I do want fact-based news. 
+    I want to know cause and effect of the news.
+    I care about health, wellness, and travel.
+    I do not care deeply about technical details of the stock market or deep tech industry news.
+    I want to know about things happening in my community and major world events that might affect my daily life.
+    """
+}
+
+# End of configuration

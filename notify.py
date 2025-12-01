@@ -18,25 +18,38 @@ def get_ip():
     return IP
 
 def get_daily_stats():
-    """Check the DB for today's news stats."""
+    """Check the DB for today's news stats per persona."""
     conn = sqlite3.connect(config.DB_NAME)
     c = conn.cursor()
     today = datetime.date.today().isoformat()
     
-    # Count total and critical
-    c.execute("SELECT COUNT(*) FROM articles WHERE date = ?", (today,))
-    total = c.fetchone()[0]
+    stats = {}
+    total_critical = 0
     
-    c.execute("SELECT COUNT(*) FROM articles WHERE date = ? AND impact_score >= 7", (today,))
-    critical = c.fetchone()[0]
+    # Get total articles ingested today
+    c.execute("SELECT COUNT(*) FROM articles WHERE date = ?", (today,))
+    total_articles = c.fetchone()[0]
+    
+    # Get stats per persona
+    for persona in config.PERSONAS.keys():
+        # Join to ensure we only count today's articles
+        query = """
+            SELECT COUNT(*) FROM article_impacts i
+            JOIN articles a ON i.article_link = a.link
+            WHERE i.persona = ? AND a.date = ? AND i.impact_score >= 7
+        """
+        c.execute(query, (persona, today))
+        crit_count = c.fetchone()[0]
+        stats[persona] = crit_count
+        total_critical += crit_count
     
     conn.close()
-    return total, critical
+    return total_articles, total_critical, stats
 
 def send_alert():
-    total, critical = get_daily_stats()
+    total_articles, total_critical, stats = get_daily_stats()
     
-    if total == 0:
+    if total_articles == 0:
         print("📭 No news today. Skipping Notification.")
         return
 
@@ -48,15 +61,21 @@ def send_alert():
 
     url = f"http://{ip}:8501"
 
-    # Dynamic Message based on urgency
-    if critical > 0:
-        title = f"🚨 {critical} Critical Updates"
-        message = f"Morning Briefing Ready.\n\n🔥 {critical} Critical Items\n📰 {total} Total Articles"
-        priority = 1 # High priority (red background in Pushover)
+    # Build Message
+    if total_critical > 0:
+        title = f"🚨 {total_critical} Critical Updates"
+        priority = 1
     else:
         title = "☕ Morning Briefing"
-        message = f"Morning Briefing Ready.\n\n📰 {total} New Articles"
-        priority = 0 # Normal priority
+        priority = 0
+
+    message = f"Morning Briefing Ready.\n📰 {total_articles} New Articles\n\n"
+    
+    for persona, count in stats.items():
+        if count > 0:
+            message += f"🔥 {persona}: {count} Critical\n"
+        else:
+            message += f"✅ {persona}: All Clear\n"
 
     # Send via Pushover
     payload = {

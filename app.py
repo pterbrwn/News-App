@@ -4,6 +4,7 @@ import pandas as pd
 import datetime
 import config
 import json
+import re
 
 # -----------------------------------------------------------------------------
 # 1. APP CONFIGURATION & STYLING
@@ -12,7 +13,7 @@ st.set_page_config(
     page_title="Jetson Briefing", 
     page_icon="☕", 
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Custom CSS for "Expert Level" UI
@@ -133,23 +134,41 @@ st.markdown("""
 # -----------------------------------------------------------------------------
 # 2. DATA LOGIC
 # -----------------------------------------------------------------------------
-def get_data():
+def get_data(persona_name):
     conn = sqlite3.connect(config.DB_NAME)
     today = datetime.date.today().isoformat()
     
-    # Primary Query: Today's News
-    # Note: 'topics' column might not exist in old DBs, so we handle that in render
+    # Join articles with impacts for the specific persona
+    query = f"""
+        SELECT 
+            a.title, a.link, a.summary, a.topics, a.date,
+            i.impact_score, i.impact_reason
+        FROM articles a
+        JOIN article_impacts i ON a.link = i.article_link
+        WHERE i.persona = '{persona_name}' AND a.date = '{today}'
+        ORDER BY i.impact_score DESC
+    """
+    
     try:
-        query = f"SELECT * FROM articles WHERE date = '{today}' ORDER BY impact_score DESC"
         df = pd.read_sql_query(query, conn)
     except Exception:
-        # Fallback if table structure is weird or empty
-        return pd.DataFrame()
+        df = pd.DataFrame()
     
-    # Fallback: If no news today (e.g., early morning or testing), show latest 10 items
+    # Fallback: If no news today, show latest 10 items for this persona
     if df.empty:
-        query = "SELECT * FROM articles ORDER BY date DESC, impact_score DESC LIMIT 10"
-        df = pd.read_sql_query(query, conn)
+        query = f"""
+            SELECT 
+                a.title, a.link, a.summary, a.topics, a.date,
+                i.impact_score, i.impact_reason
+            FROM articles a
+            JOIN article_impacts i ON a.link = i.article_link
+            WHERE i.persona = '{persona_name}'
+            ORDER BY a.date DESC, i.impact_score DESC LIMIT 10
+        """
+        try:
+            df = pd.read_sql_query(query, conn)
+        except Exception:
+            pass
         
     conn.close()
     return df
@@ -166,6 +185,10 @@ def render_content_html(row):
     else:
         badge_html = f'<span class="badge badge-low">Noise • {score}/10</span>'
     
+    # Date Logic
+    date_str = row.get('date', 'Unknown Date')
+    date_html = f'<span style="color: #666; font-size: 0.75rem; white-space: nowrap;">📅 {date_str}</span>'
+
     # Topics Logic (Handle missing column or JSON errors)
     topics_html = ""
     if 'topics' in row and row['topics']:
@@ -176,8 +199,13 @@ def render_content_html(row):
         except:
             pass
 
-    # Summary Formatting (Convert text bullets to HTML list)
+    # Summary Formatting
     summary_text = row['summary']
+    
+    # If summary looks like HTML (from RSS fallback), strip tags to keep it clean
+    if "<" in summary_text and ">" in summary_text:
+        summary_text = re.sub('<[^<]+?>', '', summary_text) # Simple regex to strip tags
+    
     if "-" in summary_text:
         items = [s.strip().replace("- ", "").replace("* ", "") for s in summary_text.split('\n') if s.strip()]
         summary_html = "<ul>" + "".join([f"<li>{item}</li>" for item in items]) + "</ul>"
@@ -185,9 +213,12 @@ def render_content_html(row):
         summary_html = f"<p>{summary_text}</p>"
 
     return f"""<div class="news-card-content">
-<div style="margin-bottom: 12px;">
-{badge_html}
-{topics_html}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+        {badge_html}
+        {topics_html}
+    </div>
+    {date_html}
 </div>
 <div class="card-summary">{summary_html}</div>
 <div class="analysis-box">
@@ -205,26 +236,41 @@ def render_content_html(row):
 # 3. MAIN UI LAYOUT
 # -----------------------------------------------------------------------------
 
-# Sidebar for Context
-with st.sidebar:
+# Top Layout: Title & Persona Selector
+col1, col2 = st.columns([3, 1])
+
+with col1:
     st.title("☕ Morning Brief")
     st.caption(f"Date: {datetime.date.today().strftime('%A, %B %d')}")
-    st.divider()
-    st.markdown("**🎯 Active Persona**")
-    st.info("Sr. Tech Product Owner\n\nFocus: Stocks, Career, Local Real Estate")
-    st.divider()
+
+with col2:
+    # Persona Selector (Main UI)
+    selected_persona = st.selectbox(
+        "👤 Viewing as:",
+        options=list(config.PERSONAS.keys()),
+        index=0
+    )
+
+# Sidebar (Extra Info)
+with st.sidebar:
+    st.title("⚙️ Controls")
     if st.button("🔄 Refresh Feed"):
         st.rerun()
+    
+    st.divider()
+    st.markdown(f"**Profile: {selected_persona}**")
+    desc = config.PERSONAS[selected_persona]
+    st.info(desc[:150] + "...")
 
 # Main Feed
 try:
-    df = get_data()
+    df = get_data(selected_persona)
     
     if df.empty:
-        st.container().warning("Waiting for intelligence... Run `./daily_job.sh` to ingest.")
+        st.container().warning(f"Waiting for intelligence for **{selected_persona}**... Run `./daily_job.sh` to ingest.")
     else:
         # Header
-        st.markdown(f"### 🌍 Daily Intelligence Report")
+        st.markdown(f"### 🌍 Daily Intelligence Report: {selected_persona}")
         st.markdown(f"Found **{len(df)}** relevant articles based on your profile.")
         st.markdown("---")
 
