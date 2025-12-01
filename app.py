@@ -200,23 +200,29 @@ def render_content_html(row):
             pass
 
     # Summary Formatting
+    import html
     summary_text = str(row['summary'])
     
-    # If summary looks like HTML (from RSS fallback), strip tags to keep it clean
+    # If summary looks like HTML (from RSS fallback), strip tags first
     if "<" in summary_text and ">" in summary_text:
-        summary_text = re.sub('<[^<]+?>', '', summary_text) # Simple regex to strip tags
+        summary_text = re.sub('<[^<]+?>', '', summary_text)
     
-    # Escape HTML special characters to prevent rendering issues
-    import html
-    summary_text = html.escape(summary_text)
+    # Check for bullet points BEFORE escaping
+    has_bullets = ("-" in summary_text or "•" in summary_text or "\n" in summary_text)
     
-    if "-" in summary_text or "•" in summary_text:
-        items = [s.strip().replace("- ", "").replace("* ", "").replace("• ", "") for s in summary_text.split('\n') if s.strip()]
-        summary_html = "<ul>" + "".join([f"<li>{item}</li>" for item in items if item]) + "</ul>"
+    if has_bullets:
+        # Process line by line, escape each item
+        items = []
+        for line in summary_text.split('\n'):
+            line = line.strip().replace("- ", "").replace("* ", "").replace("• ", "")
+            if line:
+                items.append(html.escape(line))
+        summary_html = "<ul>" + "".join([f"<li>{item}</li>" for item in items]) + "</ul>"
     else:
-        summary_html = f"<p>{summary_text}</p>"
+        # Single paragraph - escape and wrap
+        summary_html = f"<p>{html.escape(summary_text)}</p>"
     
-    # Escape the impact reason as well
+    # Escape the impact reason
     impact_reason_escaped = html.escape(str(row['impact_reason']))
 
     return f"""<div class="news-card-content">
