@@ -200,17 +200,24 @@ def render_content_html(row):
             pass
 
     # Summary Formatting
-    summary_text = row['summary']
+    summary_text = str(row['summary'])
     
     # If summary looks like HTML (from RSS fallback), strip tags to keep it clean
     if "<" in summary_text and ">" in summary_text:
         summary_text = re.sub('<[^<]+?>', '', summary_text) # Simple regex to strip tags
     
-    if "-" in summary_text:
-        items = [s.strip().replace("- ", "").replace("* ", "") for s in summary_text.split('\n') if s.strip()]
-        summary_html = "<ul>" + "".join([f"<li>{item}</li>" for item in items]) + "</ul>"
+    # Escape HTML special characters to prevent rendering issues
+    import html
+    summary_text = html.escape(summary_text)
+    
+    if "-" in summary_text or "•" in summary_text:
+        items = [s.strip().replace("- ", "").replace("* ", "").replace("• ", "") for s in summary_text.split('\n') if s.strip()]
+        summary_html = "<ul>" + "".join([f"<li>{item}</li>" for item in items if item]) + "</ul>"
     else:
         summary_html = f"<p>{summary_text}</p>"
+    
+    # Escape the impact reason as well
+    impact_reason_escaped = html.escape(str(row['impact_reason']))
 
     return f"""<div class="news-card-content">
 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
@@ -226,7 +233,7 @@ def render_content_html(row):
 <span>⚡ Impact Analysis</span>
 </div>
 <div class="analysis-content">
-{row['impact_reason']}
+{impact_reason_escaped}
 </div>
 </div>
 <a href="{row['link']}" target="_blank" class="source-link">🔗 Read Original Source</a>
