@@ -21,11 +21,25 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "phi3.5"
 # Feeds (Add your favorites)
 RSS_FEEDS = [
-    "http://feeds.bbci.co.uk/news/rss.xml", # Global News
-    "https://thehill.com/feed/", # US Politics (Fact-based/Moderate)
-    "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", # Finance & Markets
-    "https://techcrunch.com/feed/", # Tech Industry
-    "https://news.google.com/rss/search?q=Grand+Rapids+MI&hl=en-US&gl=US&ceid=US:en" # Local Grand Rapids News
+    # 1. Global Wire Service (The Raw Truth)
+    # Using Google News filter for AP prevents scraping issues with AP's own site
+    "https://news.google.com/rss/search?q=source:Associated+Press&hl=en-US&gl=US&ceid=US:en",
+
+    # 2. The Engineer's Pulse (Critical for Devs)
+    "https://news.ycombinator.com/rss",
+
+    # 3. Deep Tech & Policy (Better than TechCrunch for impact)
+    "http://feeds.arstechnica.com/arstechnica/index",
+
+    # 4. AI & Code Specific
+    # VentureBeat AI is excellent for staying ahead on LLMs/SLMs
+    "https://venturebeat.com/category/ai/feed/",
+
+    # 5. Finance (Market Watch is cleaner to scrape than CNBC)
+    "http://feeds.marketwatch.com/marketwatch/topstories/",
+
+    # 6. Your Local News (Grand Rapids) - Keep this!
+    "https://news.google.com/rss/search?q=Grand+Rapids+MI&hl=en-US&gl=US&ceid=US:en"
 ]
 
 # Personas
