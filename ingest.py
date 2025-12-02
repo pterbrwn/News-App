@@ -61,19 +61,19 @@ def analyze_impacts_bulk(text, personas_dict):
         personas_text += f"--- PERSONA: {name} ---\n{profile}\n\n"
 
     prompt = f"""
-    You are a personal intelligence officer.
-    Analyze the impact of this news on the following personas.
+    You are a personal intelligence officer analyzing news impact.
+    
+    For each persona below, write a brief, conversational explanation of how this news matters to them personally.
+    - Keep it natural and direct — avoid corporate jargon or formulaic phrases like "As a [title]..."
+    - Focus on the practical impact: what changes, what risks emerge, what opportunities appear
+    - Rate the impact from 0-10 (0 = irrelevant, 10 = critically important)
     
     {personas_text}
     
-    For EACH persona, provide:
-    1. Impact Score (0-10)
-    2. Impact Reason (Relevance + Cause & Effect)
-
     Return JSON ONLY in this format:
     {{
-        "PersonaName1": {{ "impact_score": 5, "impact_reason": "..." }},
-        "PersonaName2": {{ "impact_score": 8, "impact_reason": "..." }}
+        "PersonaName1": {{ "impact_score": 5, "impact_reason": "Brief conversational explanation in 1-2 sentences" }},
+        "PersonaName2": {{ "impact_score": 8, "impact_reason": "Brief conversational explanation in 1-2 sentences" }}
     }}
 
     News Text:
