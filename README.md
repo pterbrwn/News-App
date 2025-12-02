@@ -1,9 +1,3 @@
-Here is a professional, "Expert Level" `README.md` for your project. You can copy-paste this directly into your repository.
-
-It highlights the architecture, privacy (local AI), and the automation steps we built.
-
-***
-
 # ☕ Jetson Morning Briefing Agent
 
 **A private, self-hosted AI news analyst running on the NVIDIA Jetson Orin Nano.**
