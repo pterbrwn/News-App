@@ -17,8 +17,8 @@ DB_NAME = "news.db"
 
 # The "Brain" Settings
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3"
-
+# OLLAMA_MODEL = "llama3" # Uncomment this line to use llama3 if desireable
+OLLAMA_MODEL = "phi3.5"
 # Feeds (Add your favorites)
 RSS_FEEDS = [
     "http://feeds.bbci.co.uk/news/rss.xml", # Global News
