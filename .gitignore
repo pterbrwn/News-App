@@ -1,4 +1,8 @@
 .env
 venv/
 *.db
-_pycache_/
+__pycache__/
+*.log
+*.pyc
+nohup.out
+models/

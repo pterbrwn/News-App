@@ -5,6 +5,7 @@ import datetime
 import config
 import json
 import re
+import html
 
 # -----------------------------------------------------------------------------
 # 1. APP CONFIGURATION & STYLING
@@ -139,13 +140,16 @@ def get_data(persona_name):
     today = datetime.date.today().isoformat()
     
     # Join articles with impacts for the specific persona
+    # ADDED FILTER: impact_score > 1 to hide noise
     query = f"""
         SELECT 
             a.title, a.link, a.summary, a.topics, a.date,
             i.impact_score, i.impact_reason
         FROM articles a
         JOIN article_impacts i ON a.link = i.article_link
-        WHERE i.persona = '{persona_name}' AND a.date = '{today}'
+        WHERE i.persona = '{persona_name}' 
+        AND a.date = '{today}'
+        AND i.impact_score > 1
         ORDER BY i.impact_score DESC
     """
     
@@ -163,6 +167,7 @@ def get_data(persona_name):
             FROM articles a
             JOIN article_impacts i ON a.link = i.article_link
             WHERE i.persona = '{persona_name}'
+            AND i.impact_score > 1
             ORDER BY a.date DESC, i.impact_score DESC LIMIT 10
         """
         try:
@@ -183,20 +188,20 @@ def render_content_html(row):
     elif score >= 5:
         badge_html = f'<span class="badge badge-high">Important • {score}/10</span>'
     else:
-        badge_html = f'<span class="badge badge-low">Noise • {score}/10</span>'
+        badge_html = f'<span class="badge badge-low">Info • {score}/10</span>'
 
     # Topics Logic (Handle missing column or JSON errors)
     topics_html = ""
     if 'topics' in row and row['topics']:
         try:
             topics_list = json.loads(row['topics'])
-            for topic in topics_list:
-                topics_html += f'<span class="topic-tag">{topic}</span>'
+            if isinstance(topics_list, list):
+                for topic in topics_list:
+                    topics_html += f'<span class="topic-tag">{topic}</span>'
         except:
             pass
 
     # Summary Formatting
-    import html
     summary_text = str(row['summary'])
     
     # If summary looks like HTML (from RSS fallback), strip tags first
@@ -210,6 +215,7 @@ def render_content_html(row):
         # Process line by line, escape each item
         items = []
         for line in summary_text.split('\n'):
+            # Clean generic bullet chars
             line = line.strip().replace("- ", "").replace("* ", "").replace("• ", "")
             if line:
                 items.append(html.escape(line))
@@ -297,7 +303,6 @@ try:
                 icon = "📰"
             
             # Expander Header: Icon + Title
-            # We can't put HTML in the expander label easily, so we keep it clean text
             label = f"{icon} [{row['impact_score']}/10] {row['title']}"
             
             # Default expand critical items

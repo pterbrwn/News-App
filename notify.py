@@ -3,6 +3,20 @@ import socket
 import sqlite3
 import datetime
 import config
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(message)s'))
+logger.addHandler(console_handler)
+
+file_handler = RotatingFileHandler('notify.log', maxBytes=5*1024*1024, backupCount=3)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(file_handler)
 
 def get_ip():
     """Finds the local IP address of the Jetson."""
@@ -50,7 +64,7 @@ def send_alert():
     total_articles, total_critical, stats = get_daily_stats()
     
     if total_articles == 0:
-        print("📭 No news today. Skipping Notification.")
+        logger.info("📭 No news today. Skipping Notification.")
         return
 
     # Prefer the Tailscale IP if set, otherwise fall back to auto-detect
@@ -89,14 +103,16 @@ def send_alert():
     }
 
     try:
-        print(f"📨 Sending Pushover Notification...")
-        r = requests.post("https://api.pushover.net/1/messages.json", data=payload)
+        logger.info(f"📨 Sending Pushover Notification...")
+        r = requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=10)
         if r.status_code == 200:
-            print("✅ Notification Sent!")
+            logger.info("✅ Notification Sent!")
         else:
-            print(f"❌ Pushover Error: {r.text}")
+            logger.error(f"❌ Pushover Error: {r.status_code} - {r.text}")
+    except requests.exceptions.Timeout:
+        logger.error("❌ Pushover API timeout")
     except Exception as e:
-        print(f"❌ Network Error: {e}")
+        logger.error(f"❌ Network Error: {e}", exc_info=True)
 
 if __name__ == "__main__":
     send_alert()
