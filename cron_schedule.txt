@@ -21,4 +21,4 @@
 # For more information see the manual pages of crontab(5) and cron(8)
 # 
 # m h  dom mon dow   command
-0 7 * * * /bin/bash /home/peter/News-App/daily_job.sh >> /home/peter/News-App/cron.log 2>&1
+0 8 * * * /bin/bash /home/peter/News-App/daily_job.sh >> /home/peter/News-App/cron.log 2>&1

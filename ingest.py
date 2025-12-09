@@ -242,7 +242,6 @@ def run_ingestion():
             except Exception as e:
                 logger.warning(f"Tavily search failed for '{topic}': {e}")
                 continue
-
             for r in res.get('results', []):
                 url = r['url']
                 
