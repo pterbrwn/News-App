@@ -1,15 +1,17 @@
 # ☕ Jetson Morning Briefing Agent
 
-**A private, self-hosted AI news analyst for the NVIDIA Jetson Orin Nano.**
+**A private, self-hosted AI news analyst.**
 
 This application autonomously searches for news using the Tavily API, analyzes articles with a local Large Language Model (Qwen 2.5 via Ollama), and delivers personalized briefings via **Pushover** notifications and a Streamlit web dashboard. Multiple personas are supported, each receiving a customized impact score based on their unique interests.
+
+Optimized for **NVIDIA Jetson Orin Nano** but runs on any Linux machine with sufficient resources.
 
 ---
 
 ## 🚀 Key Features
 
 *   **100% Local AI:** All inference runs on-device using Ollama + Qwen 2.5:7b. No data sent to OpenAI or external LLM APIs.
-*   **Multi-Persona Analysis:** Define multiple users (e.g., "Peter", "Maddie") with different interests. Each article is scored (0-10) independently for each persona.
+*   **Multi-Persona Analysis:** Define multiple users with different interests. Each article is scored (0-10) independently for each persona.
 *   **Intelligent Scraping:** Uses Tavily API for news discovery and Trafilatura + Jina AI for robust content extraction.
 *   **Dark-Mode Dashboard:** Sleek Streamlit UI with topic tags, impact badges, and per-persona filtering.
 *   **Push Notifications:** Pushover alerts with daily stats and direct dashboard links.
@@ -36,7 +38,7 @@ This application autonomously searches for news using the Tavily API, analyzes a
 - **`app.py`**: Streamlit dashboard
 - **`config.py`**: Personas, search topics, Ollama settings
 - **`daily_job.sh`**: Cron wrapper script (runs ingestion + notification + health check)
-- **`jetson-briefing.service`**: systemd service for 24/7 dashboard uptime
+- **`news-briefing.service`**: systemd service for 24/7 dashboard uptime
 
 ---
 
@@ -98,19 +100,20 @@ Edit `config.py` to customize:
 SEARCH_TOPICS = [
     "Top breaking news headlines global and US today",
     "Latest artificial intelligence LLM model releases",
-    "Stock market tech sector performance"
+    "Stock market tech sector performance",
+    "Local news and events in [your city]"
 ]
 
 PERSONAS = {
-    "Peter": """
-    Role: Sr. Technical Product Owner at Meijer
-    Interests: AI/ML, stock market, geopolitics
-    Dislikes: Opinion pieces, gossip
+    "User1": """
+    Role: [Your role/occupation]
+    Interests: [Your interests]
+    Dislikes: [Content you want filtered]
     """,
-    "Maddie": """
-    Role: High School Spanish Teacher
-    Interests: Local news, education policy
-    Dislikes: Technical stock details
+    "User2": """
+    Role: [Another user's role]
+    Interests: [Their interests]
+    Dislikes: [Their filters]
     """
 }
 ```
@@ -153,23 +156,27 @@ This will:
 Keep the Streamlit dashboard running 24/7:
 
 ```bash
-# Copy service file
-sudo cp jetson-briefing.service /etc/systemd/system/
+# Copy service file (adjust filename if you renamed it)
+sudo cp jetson-briefing.service /etc/systemd/system/news-briefing.service
+
+# Edit the service file to match your paths
+sudo nano /etc/systemd/system/news-briefing.service
+# Update: User, WorkingDirectory, and ExecStart paths
 
 # Reload systemd
 sudo systemctl daemon-reload
 
 # Enable auto-start on boot
-sudo systemctl enable jetson-briefing.service
+sudo systemctl enable news-briefing.service
 
 # Start now
-sudo systemctl start jetson-briefing.service
+sudo systemctl start news-briefing.service
 
 # Check status
-sudo systemctl status jetson-briefing.service
+sudo systemctl status news-briefing.service
 
 # View logs
-sudo journalctl -u jetson-briefing.service -f
+sudo journalctl -u news-briefing.service -f
 ```
 
 **Access dashboard:** `http://localhost:8501` or `http://<TAILSCALE_IP>:8501`
@@ -179,14 +186,17 @@ Add to your crontab (`crontab -e`):
 
 ```bash
 # Run ingestion every morning at 8:00 AM
-0 8 * * * /bin/bash /home/peter/News-App/daily_job.sh >> /home/peter/News-App/cron.log 2>&1
+0 8 * * * /bin/bash [path-to-project]/daily_job.sh >> [path-to-project]/cron.log 2>&1
 ```
 
-**Important:** `daily_job.sh` attempts to restart the systemd service if it detects it's down. To avoid password prompts, add this sudoers rule:
+**Important:** Before using the cron job:
+1. Edit `daily_job.sh` and update the project path in the `cd` command
+2. Update the systemd service name if you renamed it
+3. To avoid password prompts, add a sudoers rule:
 
 ```bash
 # Run: sudo visudo
-peter ALL=(root) NOPASSWD: /bin/systemctl restart jetson-briefing.service
+[your-username] ALL=(root) NOPASSWD: /bin/systemctl restart news-briefing.service
 ```
 
 ---
@@ -260,7 +270,7 @@ News-App/
 | `OLLAMA_URL` | Ollama API endpoint | `http://localhost:11434/api/generate` |
 | `OLLAMA_MODEL` | Model name | `qwen2.5:7b` |
 | `SEARCH_TOPICS` | List of news queries | See `config.py` |
-| `PERSONAS` | Dict of persona names → descriptions | Peter, Maddie |
+| `PERSONAS` | Dict of persona names → descriptions | Customizable |
 | `DB_NAME` | SQLite database file | `news.db` |
 
 ### Environment Variables (`.env`)
@@ -301,13 +311,13 @@ sudo journalctl -u jetson-briefing.service -n 50
 ### Cron Job Not Running
 ```bash
 # Check cron logs:
-tail -f /home/peter/News-App/cron.log
+tail -f [path-to-project]/cron.log
 
 # Verify crontab:
 crontab -l
 
 # Test script manually:
-cd /home/peter/News-App && bash daily_job.sh
+cd [path-to-project] && bash daily_job.sh
 ```
 
 ### No Articles Found
