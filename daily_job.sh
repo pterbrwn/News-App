@@ -18,10 +18,10 @@ python3 ingest.py
 # 3. Send Notification (The Result)
 python3 notify.py
 
-# 4. Self-Healing: Ensure Dashboard is Up
-if ! pgrep -f "streamlit run app.py" > /dev/null; then
-    echo "🔄 Dashboard down. Restarting..."
-    nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &
+# 4. Self-Healing: Ensure Dashboard is Up (via systemd)
+if ! systemctl is-active --quiet jetson-briefing.service; then
+    echo "🔄 Dashboard service down. Restarting via systemd..."
+    sudo systemctl restart jetson-briefing.service
 else
-    echo "✅ Dashboard is running."
+    echo "✅ Dashboard service is running."
 fi

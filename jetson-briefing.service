@@ -1,0 +1,16 @@
+[Unit]
+Description=Jetson Morning Briefing Streamlit App
+After=network.target
+
+[Service]
+Type=simple
+User=peter
+WorkingDirectory=/home/peter/News-App
+Environment=PATH=/home/peter/News-App/venv/bin
+Environment=PYTHONPATH=/home/peter/News-App
+ExecStart=/home/peter/News-App/venv/bin/streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
