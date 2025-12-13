@@ -60,6 +60,9 @@ This application autonomously scrapes RSS feeds, uses a local Large Language Mod
     
     # Your Jetson's Tailscale IP
     TAILSCALE_IP=100.x.x.x
+    
+    # Optional AI dependencies
+    TAVILY_API_KEY=your_tavily_api_key
     ```
 
 4.  **Configure Persona (config.py)**
@@ -81,12 +84,17 @@ To trigger the ingestion and notification manually:
 ./daily_job.sh
 ```
 
-### Starting the Dashboard
-To keep the UI running in the background:
+### Dashboard (systemd service)
+Service mode is the recommended way to keep the Streamlit UI running 24/7. The project ships with `jetson-briefing.service` that wraps `streamlit run app.py`.
+
 ```bash
-nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &
+sudo cp jetson-briefing.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable jetson-briefing.service
+sudo systemctl start jetson-briefing.service
+sudo journalctl -u jetson-briefing.service -f
 ```
-*Access via:* `http://<TAILSCALE_IP>:8501`
+Once the service is active, the dashboard is visible at `http://<TAILSCALE_IP>:8501` or `http://localhost:8501`.
 
 ---
 
@@ -94,11 +102,19 @@ nohup streamlit run app.py --server.port 8501 > streamlit.log 2>&1 &
 
 The application is designed to run on a schedule. The repository includes a `daily_job.sh` wrapper which handles ingestion, notifications, and ensures the dashboard is running.
 
-**Recommended Crontab Configuration:**
+**Recommended Crontab Configuration (run as the app owner):**
 ```bash
 # Run the briefing every morning at 7:00 AM
-0 7 * * * /bin/bash /path/to/News-App/daily_job.sh >> /path/to/News-App/cron.log 2>&1
+0 7 * * * /bin/bash /home/peter/News-App/daily_job.sh >> /home/peter/News-App/cron.log 2>&1
 ```
+
+`daily_job.sh` now interacts with the `jetson-briefing.service`. If the service is not active, it automatically restarts it via `sudo systemctl restart jetson-briefing.service`. To avoid password prompts when cron runs this script, consider adding a sudoers rule such as:
+
+```bash
+peter ALL=(root) NOPASSWD: /bin/systemctl restart jetson-briefing.service
+```
+
+This keeps the systemd service in sync with the ingestion cron without duplicating Streamlit processes.
 
 ---
 
